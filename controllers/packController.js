@@ -3,8 +3,8 @@ const Pack = require('../models/packModel');
 // Créer un pack
 exports.createPack = async(req, res) => {
     try {
-        const { name } = req.body;
-        const pack = new Pack({ name });
+        const { name, description } = req.body;
+        const pack = new Pack({ name, description });
         await pack.save();
         res.status(201).json({ message: 'Pack créé avec succès', pack });
     } catch (error) {

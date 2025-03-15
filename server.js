@@ -11,7 +11,6 @@ app.use(cors());
 // Connexion à MongoDB
 const connectDB = async() => {
     try {
-        // Connexion à MongoDB
         await mongoose.connect(process.env.MONGO_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
@@ -20,11 +19,10 @@ const connectDB = async() => {
         console.log('MongoDB connecté');
     } catch (error) {
         console.error('Erreur de connexion à MongoDB:', error);
-        process.exit(1); // Quitter si la connexion échoue
+        process.exit(1);
     }
 };
 
-// Appel de la fonction pour se connecter à la base de données
 connectDB();
 
 // Import des routes

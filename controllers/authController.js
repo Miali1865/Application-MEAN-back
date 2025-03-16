@@ -5,7 +5,6 @@ const User = require('../models/User');
 exports.register = async(req, res) => {
     try {
         const { name, email, password, role } = req.body;
-        console.log("tonga ato ve nefany");
 
         // Vérifier si l'utilisateur existe déjà
         const existingUser = await User.findOne({ email });
@@ -50,6 +49,7 @@ exports.login = async(req, res) => {
 
         res.json({ token });
     } catch (error) {
+        console.log("erreur ", error);
         res.status(500).json({ message: "Erreur lors de la connexion", error });
     }
 };

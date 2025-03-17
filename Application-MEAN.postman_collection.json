@@ -1,0 +1,233 @@
+{
+	"info": {
+		"_postman_id": "c0e73a95-55fc-46f9-b7d0-2fc3a04c625a",
+		"name": "Application-MEAN",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "31025097"
+	},
+	"item": [
+		{
+			"name": "http://localhost:5000/api/auth/register",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text"
+					},
+					{
+						"key": "",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"bigManager\",\n    \"email\": \"manager@garage.com\",\n    \"password\": \"123456\",\n    \"role\": \"manager\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/api/auth/register",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"auth",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:5000/api/auth/login",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"manager@garage.com\",\n    \"password\": \"123456\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/api/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:5000/api/users",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZDU5MzQ0NzI3NWJjNjYxODQ3MWM1MiIsIm5hbWUiOiJiaWdNYW5hZ2VyIiwiZW1haWwiOiJtYW5hZ2VyQGdhcmFnZS5jb20iLCJyb2xlIjoibWFuYWdlciIsImlhdCI6MTc0MjA2NDk2MCwiZXhwIjoxNzQyMDY4NTYwfQ.i-TlqeFXGElRsd7SK8U2FWVWPI923i3vnSc3DpNLdf0",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/api/users",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:5000/api/services/service",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZDU5MzQ0NzI3NWJjNjYxODQ3MWM1MiIsIm5hbWUiOiJiaWdNYW5hZ2VyIiwiZW1haWwiOiJtYW5hZ2VyQGdhcmFnZS5jb20iLCJyb2xlIjoibWFuYWdlciIsImlhdCI6MTc0MjA2NDk2MCwiZXhwIjoxNzQyMDY4NTYwfQ.i-TlqeFXGElRsd7SK8U2FWVWPI923i3vnSc3DpNLdf0",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"idPack\": \"67d5a193d642523df3dbcc5d\",\n    \"name\": \"Révision Intermédiaire\",\n    \"description\": \"1 Filtre + Vidange huile moteur + Contrôles\",\n    \"basePrice\": 100000,\n    \"estimatedTime\": 20\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/api/services/service",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"services",
+						"service"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:5000/api/services/pack",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZDU5MzQ0NzI3NWJjNjYxODQ3MWM1MiIsIm5hbWUiOiJiaWdNYW5hZ2VyIiwiZW1haWwiOiJtYW5hZ2VyQGdhcmFnZS5jb20iLCJyb2xlIjoibWFuYWdlciIsImlhdCI6MTc0MjA2MzIxMSwiZXhwIjoxNzQyMDY2ODExfQ.ACIfbdWNTOZFZIRKxL-Vr6YIeZYY7BL4xVBCHdY7CX8",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Embrayage et Transmission\",\n    \"description\": \"Pour bénéficier des meilleurs devis pour votre embrayage et votre transmission, ayez le réflexe idGarages !\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/api/services/pack",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"services",
+						"pack"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:5000/api/services/pack",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/api/services/pack",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"services",
+						"pack"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -31,6 +31,9 @@ const userRoutes = require('./routes/userRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 
 // Utilisation des routes
+app.get('/', (res, req) => {
+    req.send("hello word")
+})
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/services', serviceRoutes);

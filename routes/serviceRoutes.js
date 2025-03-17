@@ -3,7 +3,8 @@ const {
     createService,
     getServicesByPack,
     updateService,
-    deleteService
+    deleteService,
+    getServices
 } = require('../controllers/serviceController');
 const {
     createPack,
@@ -21,6 +22,7 @@ router.get('/pack', getAllPacks);
 router.get('/pack/:id', getPackById);
 
 // Routes pour les services
+router.get('/services', getServices); // Liste des services 
 router.get('/services/pack/:idPack', getServicesByPack); // Liste des services par pack
 router.post('/service', authMiddleware, roleMiddleware(["manager"]), createService); // Ajouter un service
 router.put('/service/:id', authMiddleware, roleMiddleware(["manager"]), updateService); // Mettre à jour un service

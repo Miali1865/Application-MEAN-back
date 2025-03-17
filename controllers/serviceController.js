@@ -27,6 +27,16 @@ exports.createService = async(req, res) => {
     }
 };
 
+// Récupérer tous les services 
+exports.getServices = async(req, res) => {
+    try {
+        const services = await Service.find();
+        res.status(200).json(services);
+    } catch (error) {
+        res.status(500).json({ message: "Erreur lors de la récupération des services", error });
+    }
+};
+
 // Récupérer tous les services associés à un pack (idPack)
 exports.getServicesByPack = async(req, res) => {
     try {

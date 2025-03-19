@@ -9,7 +9,7 @@ exports.register = async(req, res) => {
         // Vérifier si l'utilisateur existe déjà
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(400).json({ message: "L'utilisateur existe déjà" });
+            return res.status(400).json({ message: "L'email est déjà utilisé." });
         }
 
         // Hasher le mot de passe
@@ -19,10 +19,19 @@ exports.register = async(req, res) => {
         const newUser = new User({ name, email, password: hashedPassword, role });
         await newUser.save();
 
-        res.status(201).json({ message: "Utilisateur enregistré avec succès !" });
+        // Générer le token JWT
+        const token = jwt.sign({ id: newUser._id, email: newUser.email, role: newUser.role },
+            process.env.JWT_SECRET, { expiresIn: '7d' }
+        );
+
+        res.status(201).json({
+            message: "Utilisateur enregistré avec succès !",
+            token
+        });
+
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Erreur lors de l'inscription", error: error.message });
+        res.status(500).json({ message: "Erreur lors de l'inscription" });
     }
 };
 

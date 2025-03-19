@@ -37,6 +37,7 @@ app.get('/', (res, req) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/services', serviceRoutes);
+// app.use('/api/collections', collectionsRoutes);
 
 // Démarrer le serveur
 const PORT = process.env.PORT || 5000;

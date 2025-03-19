@@ -47,6 +47,27 @@ exports.getServicesByPack = async(req, res) => {
     }
 };
 
+
+// Récupération prix minimum services
+exports.getMinPriceByPack = async(req, res) => {
+    try {
+        const { idPack } = req.params;
+        const services = await Service.find({ idPack });
+
+        if (services.length === 0) {
+            return res.status(404).json({ message: "Aucun service trouvé pour cet idPack" });
+        }
+
+        // Trouver le prix minimum
+        const minPrice = Math.min(...services.map(service => service.basePrice));
+
+        res.status(200).json({ idPack, minPrice });
+    } catch (error) {
+        res.status(500).json({ message: "Erreur lors de la récupération du prix minimum", error });
+    }
+};
+
+
 // Mettre à jour un service
 exports.updateService = async(req, res) => {
     try {
@@ -81,5 +102,25 @@ exports.deleteService = async(req, res) => {
         res.status(200).json({ message: "Service supprimé avec succès" });
     } catch (error) {
         res.status(500).json({ message: "Erreur lors de la suppression du service", error });
+    }
+};
+
+// Récupération des données
+exports.getPacksWithServices = async(req, res) => {
+    try {
+        const packs = await Pack.find();
+        const services = await Service.find();
+
+        const packsWithServices = packs.map(pack => {
+            const associatedServices = services.filter(service => {
+                return service.idPack.toString() === pack._id.toString();
+            });
+            return {...pack.toObject(), services: associatedServices };
+        });
+
+        res.status(200).json(packsWithServices);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Erreur lors de la récupération des packs", error });
     }
 };

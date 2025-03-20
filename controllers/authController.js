@@ -12,6 +12,14 @@ exports.register = async(req, res) => {
             return res.status(400).json({ message: "L'email est déjà utilisé." });
         }
 
+        // Vérifier si un manager existe déjà
+        if (role === "manager") {
+            const existingManager = await User.findOne({ role: "manager" });
+            if (existingManager) {
+                return res.status(400).json({ message: "Un manager existe déjà. Un seul manager est autorisé." });
+            }
+        }
+
         // Hasher le mot de passe
         const hashedPassword = await bcrypt.hash(password, 10);
 

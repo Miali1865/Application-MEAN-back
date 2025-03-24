@@ -29,7 +29,7 @@ connectDB();
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
-const carClientRoute = require('./routes/carClientRoute');
+const carRoute = require('./routes/carRoute');
 
 // Utilisation des routes
 app.get('/', (res, req) => {
@@ -38,7 +38,7 @@ app.get('/', (res, req) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/services', serviceRoutes);
-app.use('/api/car', carClientRoute);
+app.use('/api/car', carRoute);
 // app.use('/api/collections', collectionsRoutes);
 
 // Démarrer le serveur

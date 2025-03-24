@@ -1,13 +1,13 @@
 const Car = require("../models/Car");
 const MaintenanceRecord = require("../models/MaintenanceRecord");
 const serviceModel = require("../models/serviceModel");
-const Brand = require('../models/Brand');
+const TypeOfCar = require('../models/TypeOfCar');
 
 exports.createMaintenanceRecord = async(req, res) => {
     try {
         const { carId, serviceId } = req.body;
 
-        const car = await Car.findById(carId).populate('brand');
+        const car = await Car.findById(carId).populate('TypeOfCar');
 
         if (!car) return res.status(404).json({ message: "Voiture introuvable." });
 
@@ -15,8 +15,8 @@ exports.createMaintenanceRecord = async(req, res) => {
 
         if (!service) return res.status(404).json({ message: "Service introuvable." });
 
-        const finalPrice = service.basePrice * car.brand.priceCoefficient;
-        const estimatedTime = service.estimatedTime * car.brand.timeCoefficient;
+        const finalPrice = service.basePrice * car.TypeOfCar.priceCoefficient;
+        const estimatedTime = service.estimatedTime * car.TypeOfCar.timeCoefficient;
 
         // Enregistrer le carnet d’entretien
         const maintenanceRecord = new MaintenanceRecord({

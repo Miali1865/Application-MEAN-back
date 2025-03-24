@@ -22,7 +22,7 @@ const router = express.Router();
 router.post('/pack', authMiddleware, roleMiddleware(["manager"]), createPack);
 router.get('/pack', getAllPacks);
 router.get('/pack/:id', getPackById);
-router.get("/packs-service", getPacksWithServices);
+router.get('/packs-service', getPacksWithServices);
 
 // Routes pour les services
 router.get('/', getServices);

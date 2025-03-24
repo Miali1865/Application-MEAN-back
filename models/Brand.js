@@ -1,9 +1,9 @@
+const { type } = require('express/lib/response');
 const mongoose = require('mongoose');
 
 const brandSchema = new mongoose.Schema({
     name: { type: String, required: true, unique: true },
-    priceCoefficient: { type: Number, required: true, default: 1 },
-    timeCoefficient: { type: Number, required: true, default: 1 }
+    logo: { type: String, default: null }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Brand', brandSchema);

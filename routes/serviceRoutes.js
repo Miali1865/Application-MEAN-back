@@ -26,7 +26,7 @@ router.get('/packs-service', getPacksWithServices);
 
 // Routes pour les services
 router.get('/', getServices);
-router.get('/pack/:idPack', getServicesByPack);
+router.get('/pack-services/:idPack', getServicesByPack);
 router.get('/min-price/:idPack', getMinPriceByPack);
 router.post('/service', authMiddleware, roleMiddleware(["manager"]), createService);
 router.put('/service/:id', authMiddleware, roleMiddleware(["manager"]), updateService);

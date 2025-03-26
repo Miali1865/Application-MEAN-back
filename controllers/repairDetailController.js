@@ -1,14 +1,27 @@
 // controllers/repairDetailController.js
+const Car = require('../models/Car');
 const Repair = require('../models/Repair');
 const RepairDetail = require('../models/RepairDetail');
+const Service = require('../models/serviceModel');
 const mongoose = require('mongoose');
 
 // Récupérer tous les détails des réparations
 exports.getAllRepairDetails = async (req, res) => {
     try {
         const repairDetails = await RepairDetail.find()
-            .populate('idRepair', 'idVoiture idService timestamp')
-            .populate('idMecanicien', 'name');
+            .populate({
+                path: 'idRepair',
+                select: 'idVoiture',
+                populate: {
+                    path: 'idVoiture',
+                    model: 'Car',
+                    select: 'make model licensePlate'
+                }
+            })
+            .populate('idService', 'name basePrice estimatedTime') 
+            .populate('idMecanicien', 'name') 
+            .exec(); 
+
         res.status(200).json(repairDetails);
     } catch (error) {
         console.error("Erreur lors de la récupération des détails de réparation :", error);
@@ -16,13 +29,21 @@ exports.getAllRepairDetails = async (req, res) => {
     }
 };
 
+
 // Créer un détail de réparation
 exports.createRepairDetail = async (req, res) => {
     try {
-        const { idRepair, idMecanicien, status } = req.body;
+        const { idRepair, idService, idMecanicien, status } = req.body;
+
+        const existingDetail = await RepairDetail.findOne({ idRepair, idService, idMecanicien, status });
+
+        if (existingDetail) {
+            return res.status(400).json({ message: "Ce détail de réparation existe déjà." });
+        }
 
         const newRepairDetail = new RepairDetail({
             idRepair,
+            idService,
             idMecanicien,
             status
         });
@@ -32,33 +53,6 @@ exports.createRepairDetail = async (req, res) => {
         res.status(201).json({ message: "Détail de réparation créé avec succès !", repairDetail: newRepairDetail });
     } catch (error) {
         console.error("Erreur lors de la création du détail de réparation :", error);
-        res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
-    }
-};
-
-// Mettre à jour un détail de réparation
-exports.updateRepairDetail = async (req, res) => {
-    try {
-        const { idRepair, idMecanicien, status } = req.body;
-        const repairDetailId = req.params.id; 
-
-        const updatedRepairDetail = await RepairDetail.findByIdAndUpdate(
-            repairDetailId,
-            {
-                idRepair,
-                idMecanicien,
-                status
-            },
-            { new: true } 
-        );
-
-        if (!updatedRepairDetail) {
-            return res.status(404).json({ message: "Détail de réparation non trouvé." });
-        }
-
-        res.status(200).json({ message: "Détail de réparation mis à jour avec succès !", repairDetail: updatedRepairDetail });
-    } catch (error) {
-        console.error("Erreur lors de la mise à jour du détail de réparation :", error);
         res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
     }
 };
@@ -91,28 +85,35 @@ exports.getRepairsByMechanic = async (req, res) => {
         // Extraire les IDs des réparations
         const repairIds = latestRepairDetails.map(detail => detail._id);
         if (repairIds.length === 0) {
-            return res.status(200).json([]); // Retourner un tableau vide si aucune réparation trouvée
+            return res.status(200).json([]); 
         }
 
-        // Étape 2 : Récupérer les réparations avec les relations Voiture et Service
+        // Étape 2 : Récupérer les réparations avec la voiture associée
         const repairData = await Repair.find({ _id: { $in: repairIds } })
             .populate({
                 path: 'idVoiture',
-                select: 'model plateNumber' // Sélectionner les champs nécessaires
-            })
-            .populate({
-                path: 'idService',
-                select: 'name description' // Sélectionner les champs nécessaires
+                select: 'model plateNumber' 
             })
             .lean();
 
-        // Associer les détails récupérés avec les réparations
+        // Étape 3 : Récupérer les services associés aux réparations depuis RepairDetail
+        const serviceIds = latestRepairDetails
+            .map(detail => detail.latestRepairDetail?.idService) 
+            .filter(id => id); 
+
+        const serviceData = await Service.find({ _id: { $in: serviceIds } })
+            .select('name description')
+            .lean();
+
         const finalData = latestRepairDetails.map(detail => {
             const repair = repairData.find(r => r._id.toString() === detail._id.toString());
+            const service = serviceData.find(s => s._id.toString() === detail.latestRepairDetail?.idService?.toString());
+
             return {
                 ...repair,
-                status: detail.latestRepairDetail.status,
-                timestamp: detail.latestRepairDetail.timestamp
+                service: service || null, 
+                // status: detail.latestRepairDetail.status,
+                // timestamp: detail.latestRepairDetail.timestamp
             };
         });
 
@@ -125,5 +126,58 @@ exports.getRepairsByMechanic = async (req, res) => {
     }
 };
 
+// fonction pour récupérer les réparations terminés d'une voiture d'un client
+exports.getLatestRepairByCar = async (req, res) => {
+    try {
+        const { carId } = req.params; 
 
+        const latestRepairDetail = await RepairDetail.findOne({
+            idRepair: { $in: await Repair.find({ idVoiture: carId }).distinct('_id') } 
+        })
+        .populate('idRepair')
+        .populate('idMecanicien') 
+        .sort({ timestamp: -1 }) 
+        .limit(1);
 
+        if (!latestRepairDetail) {
+            return res.status(404).json({ message: "Aucune réparation trouvée pour cette voiture." });
+        }
+
+        res.status(200).json({ repairDetail: latestRepairDetail });
+    } catch (error) {
+        console.error("Erreur lors de la récupération de la dernière réparation :", error);
+        res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
+    }
+};
+
+// fonction pour récupérer les réparations terminés d'une voiture d'un client
+exports.getCompletedRepairsByCar = async (req, res) => {
+    try {
+        const { carId } = req.params; 
+        const car = await Car.findById(carId);
+        if (!car) {
+            return res.status(404).json({ message: "Voiture non trouvée" });
+        }
+
+        const repairs = await Repair.find({ idVoiture: carId });
+
+        if (repairs.length === 0) {
+            return res.status(404).json({ message: "Aucune réparation trouvée pour cette voiture" });
+        }
+
+        const completedRepairDetails = await RepairDetail.find({
+            idRepair: { $in: repairs.map(repair => repair._id) },
+            status: "Completed" 
+        }).populate('idRepair').populate('idMecanicien'); 
+
+        if (completedRepairDetails.length === 0) {
+            return res.status(404).json({ message: "Aucune réparation terminée pour cette voiture" });
+        }
+
+        res.status(200).json({ message: "Réparations terminées trouvées", repairs: completedRepairDetails });
+
+    } catch (error) {
+        console.error("Erreur lors de la récupération des réparations terminées :", error);
+        res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
+    }
+};

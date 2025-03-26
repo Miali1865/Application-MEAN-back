@@ -6,7 +6,6 @@ exports.getAllRepairs = async (req, res) => {
     try {
         const repairs = await Repair.find()
             .populate('idVoiture', 'plateNumber model')
-            .populate('idService', 'name');
         res.status(200).json(repairs);
     } catch (error) {
         console.error("Erreur lors de la récupération des réparations :", error);
@@ -17,11 +16,10 @@ exports.getAllRepairs = async (req, res) => {
 // Créer une réparation
 exports.createRepair = async (req, res) => {
     try {
-        const { idVoiture, idService } = req.body;
+        const { idVoiture } = req.body;
 
         const newRepair = new Repair({
-            idVoiture,
-            idService
+            idVoiture
         });
 
         await newRepair.save();

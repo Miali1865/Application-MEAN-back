@@ -107,3 +107,73 @@ exports.getPastAppointmentsCount = async (req, res) => {
         res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
     }
 };
+
+// Fonction pour obtenir les rendez-vous passés
+exports.getPastAppointments = async (req, res) => {
+    const { date } = req.query;
+
+    if (!date) {
+        return res.status(400).json({ message: "La date est requise." });
+    }
+
+    try {
+        // Convertir la date donnée en objet Date
+        const parsedDate = new Date(date);
+
+        // Calculer l'heure de début et de fin de la journée
+        const startOfDay = new Date(parsedDate);
+        startOfDay.setUTCHours(0, 0, 0, 0); // Réinitialiser à minuit UTC
+
+        const endOfDay = new Date(parsedDate);
+        endOfDay.setUTCHours(23, 59, 59, 999); // Réinitialiser à 23h59 UTC
+
+        // Sélectionner les rendez-vous passés (date < aujourd'hui)
+        const pastAppointments = await Appointment.find({
+            date: { $lt: startOfDay }
+        });
+
+        return res.status(200).json({
+            message: `Il y a ${pastAppointments.length} rendez-vous passés avant la date ${date}.`,
+            count: pastAppointments.length,
+            appointments: pastAppointments
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Erreur interne du serveur." });
+    }
+};
+
+// Fonction pour obtenir les rendez-vous futurs
+exports.getFutureAppointments = async (req, res) => {
+    const { date } = req.query;
+
+    if (!date) {
+        return res.status(400).json({ message: "La date est requise." });
+    }
+
+    try {
+        // Convertir la date donnée en objet Date
+        const parsedDate = new Date(date);
+
+        // Calculer l'heure de début et de fin de la journée
+        const startOfDay = new Date(parsedDate);
+        startOfDay.setUTCHours(0, 0, 0, 0); // Réinitialiser à minuit UTC
+
+        const endOfDay = new Date(parsedDate);
+        endOfDay.setUTCHours(23, 59, 59, 999); // Réinitialiser à 23h59 UTC
+
+        // Sélectionner les rendez-vous futurs (date > aujourd'hui)
+        const futureAppointments = await Appointment.find({
+            date: { $gt: endOfDay }
+        });
+
+        return res.status(200).json({
+            message: `Il y a ${futureAppointments.length} rendez-vous futurs après la date ${date}.`,
+            count: futureAppointments.length,
+            appointments: futureAppointments
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Erreur interne du serveur." });
+    }
+};

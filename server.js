@@ -32,6 +32,7 @@ const serviceRoutes = require('./routes/serviceRoutes');
 const carRoute = require('./routes/carRoute');
 const billingRoutes = require('./routes/billingRoutes');
 const appointment = require('./routes/appointmentRoutes');
+const dashboard = require('./routes/dashboardRoutes');
 
 // Utilisation des routes
 app.get('/', (res, req) => {
@@ -43,6 +44,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/car', carRoute);
 app.use('/api/billing', billingRoutes);
 app.use('/api/appointment', appointment);
+app.use('/api/dashboard', dashboard);
 // app.use('/api/collections', collectionsRoutes);
 
 // Démarrer le serveur

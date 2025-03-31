@@ -59,3 +59,51 @@ exports.scheduleAppointment = async (req, res) => {
         res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
     }
 };
+
+exports.getPastAppointmentsCount = async (req, res) => {
+    try {
+        const { date } = req.query; // La date doit être passée en tant que query param
+
+        // Vérifier que la date est valide
+        const parsedDate = new Date(date);
+        if (isNaN(parsedDate)) {
+            return res.status(400).json({ message: "Date invalide." });
+        }
+
+        const startOfDay = new Date(parsedDate);
+        startOfDay.setUTCHours(0, 0, 0, 0); // Réinitialiser à minuit en UTC
+
+        // Obtenir la date de fin de la journée en UTC (23h59)
+        const endOfDay = new Date(parsedDate);
+        endOfDay.setUTCHours(23, 59, 59, 999); // Réinitialiser à 23h59 en UTC
+
+        // Log pour voir les dates
+        console.log("Start of day:", startOfDay);
+        console.log("End of day:", endOfDay);
+
+        // Trouver le nombre de rendez-vous pour cette journée
+        const appointmentsCount = await Appointment.countDocuments({
+            date: {
+                $gte: startOfDay,
+                $lte: endOfDay
+            }
+        });
+
+        // Si on obtient un compte de rendez-vous > 0
+        if (appointmentsCount > 0) {
+            res.status(200).json({
+                message: `Il y a ${appointmentsCount} rendez-vous passés pour la date ${date}.`,
+                count: appointmentsCount
+            });
+        } else {
+            res.status(200).json({
+                message: `Il n'y a aucun rendez-vous passés pour la date ${date}.`,
+                count: appointmentsCount
+            });
+        }
+
+    } catch (error) {
+        console.error("Erreur lors du comptage des rendez-vous passés :", error);
+        res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
+    }
+};

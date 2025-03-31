@@ -2,7 +2,7 @@ const express = require('express');
 const { getAllTypesOfCar, createTypeOfCar, getTypeOfCarById,updateTypeOfCar,deleteTypeOfCar } = require('../controllers/TypeOfCarController');
 const { getAllCars,getCarById,createCar,updateCar,deleteCar } = require('../controllers/carController');
 const { getAllBrands,getBrandById,createBrand,updateBrand,deleteBrand } = require('../controllers/brandController');
-const { getAllRepairs,createRepair,deleteRepair } = require('../controllers/repairController');
+const { getAllRepairs,createRepair,deleteRepair,getLastRepairId } = require('../controllers/repairController');
 const { getAllRepairDetails,createRepairDetail,getRepairsByMechanic,getCompletedRepairsByCar,getLatestRepairByCar } = require('../controllers/repairDetailController');
 
 const authMiddleware = require('../middlewares/authMiddleware');
@@ -32,6 +32,7 @@ router.delete('/client/:id', authMiddleware, roleMiddleware(["client"]), deleteC
 router.get('/repair', authMiddleware, getAllRepairs); 
 router.post('/repair', authMiddleware, roleMiddleware(["client"]), createRepair); 
 router.delete('/repair/:id', authMiddleware, roleMiddleware(["client"]), deleteRepair); 
+router.get('/last-repair', authMiddleware, getLastRepairId); 
 
 router.get('/repairdetail', authMiddleware, getAllRepairDetails); 
 router.post('/repairdetail', authMiddleware, createRepairDetail);

@@ -58,36 +58,22 @@ exports.scheduleAppointment = async (req, res) => {
     }
 };
 
-exports.getFullyBookedDays = async (req, res) => {
+exports.getTotalBookedAppointments = async (req, res) => {
     try {
-        const appointments = await Appointment.aggregate([
-            {
-                $group: {
-                    _id: "$date",
-                    total: { $sum: 1 } // Compter les rendez-vous par jour
-                }
-            },
-            {
-                $match: { total: { $gte: timeSlots.length } } // Vérifier si tous les créneaux sont pris
-            },
-            {
-                $project: {
-                    _id: 0,
-                    date: "$_id"
-                }
-            }
-        ]);
+        // Compter tous les rendez-vous enregistrés
+        const totalAppointments = await Appointment.countDocuments();
 
-        return res.status(200).json({ 
-            message: "Jours complets récupérés avec succès.",
-            fullyBookedDays: appointments.map(app => app.date)
+        return res.status(200).json({
+            message: `Il y a ${totalAppointments} rendez-vous déjà réservés.`,
+            count: totalAppointments
         });
 
     } catch (error) {
-        console.error("Erreur lors de la récupération des jours complets :", error);
+        console.error("Erreur lors du comptage des rendez-vous :", error);
         res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
     }
 };
+
 
 
 exports.getPastAppointmentsCount = async (req, res) => {

@@ -2,10 +2,13 @@ const mongoose = require('mongoose');
 const Appointment = require('../models/Appointment');
 const Repair = require('../models/Repair');
 
+const timeSlots = ['08:00', '10:00', '14:00', '16:00']; // Créneaux horaires autorisés
+
 exports.scheduleAppointment = async (req, res) => {
     try {
-        const { idRepair } = req.body;
+        const { idRepair, selectedDate, selectedSlot } = req.body;
 
+        // Vérification de l'ID de réparation
         if (!mongoose.Types.ObjectId.isValid(idRepair)) {
             return res.status(400).json({ message: "ID réparation invalide." });
         }
@@ -16,36 +19,31 @@ exports.scheduleAppointment = async (req, res) => {
             return res.status(404).json({ message: "Réparation non trouvée." });
         }
 
-        let date = new Date();
-        date.setHours(0, 0, 0, 0); // Réinitialiser à minuit
+        // Vérifier si la date fournie est valide
+        let date = new Date(selectedDate);
+        date.setHours(0, 0, 0, 0); // Mettre l'heure à minuit
 
-        const timeSlots = ['08:00', '10:00', '14:00', '16:00']; // Créneaux horaires
-
-        let selectedSlot = null;
-
-        while (!selectedSlot) {
-            // Sauter le dimanche
-            if (date.getDay() === 0) {
-                date.setDate(date.getDate() + 1);
-                continue;
-            }
-
-            for (const slot of timeSlots) {
-                const count = await Appointment.countDocuments({ date, timeSlot: slot });
-
-                if (count === 0) {  // Créneau libre
-                    selectedSlot = slot;
-                    break;
-                }
-            }
-
-            // Si aucun créneau dispo, on passe au jour suivant
-            if (!selectedSlot) date.setDate(date.getDate() + 1);
+        if (isNaN(date.getTime())) {
+            return res.status(400).json({ message: "Date invalide." });
         }
 
-        console.log(`📅 Prochain rendez-vous disponible : ${date.toISOString()} à ${selectedSlot}`);
+        // Ne pas permettre la réservation le dimanche
+        if (date.getDay() === 0) {
+            return res.status(400).json({ message: "Les rendez-vous ne sont pas disponibles le dimanche." });
+        }
 
-        // Créer le rendez-vous
+        // Vérifier si l'heure sélectionnée est valide
+        if (!timeSlots.includes(selectedSlot)) {
+            return res.status(400).json({ message: "Créneau horaire invalide. Les horaires disponibles sont 08:00, 10:00, 14:00 et 16:00." });
+        }
+
+        // Vérifier si le créneau est déjà réservé
+        const count = await Appointment.countDocuments({ date, timeSlot: selectedSlot });
+        if (count > 0) {
+            return res.status(400).json({ message: "Ce créneau est déjà réservé. Veuillez en choisir un autre." });
+        }
+
+        // Créer et enregistrer le rendez-vous
         const appointment = new Appointment({ idRepair, date, timeSlot: selectedSlot });
         await appointment.save();
 
@@ -59,6 +57,38 @@ exports.scheduleAppointment = async (req, res) => {
         res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
     }
 };
+
+exports.getFullyBookedDays = async (req, res) => {
+    try {
+        const appointments = await Appointment.aggregate([
+            {
+                $group: {
+                    _id: "$date",
+                    total: { $sum: 1 } // Compter les rendez-vous par jour
+                }
+            },
+            {
+                $match: { total: { $gte: timeSlots.length } } // Vérifier si tous les créneaux sont pris
+            },
+            {
+                $project: {
+                    _id: 0,
+                    date: "$_id"
+                }
+            }
+        ]);
+
+        return res.status(200).json({ 
+            message: "Jours complets récupérés avec succès.",
+            fullyBookedDays: appointments.map(app => app.date)
+        });
+
+    } catch (error) {
+        console.error("Erreur lors de la récupération des jours complets :", error);
+        res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
+    }
+};
+
 
 exports.getPastAppointmentsCount = async (req, res) => {
     try {

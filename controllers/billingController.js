@@ -157,3 +157,51 @@ exports.getUnpaidBillsByClient = async (req, res) => {
         res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
     }
 };
+
+exports.getTotalPaidBills = async (req, res) => {
+    try {
+        // Récupérer toutes les factures payées
+        const paidBills = await Billing.find({ status: 'Paid' });
+
+        if (paidBills.length === 0) {
+            return res.status(404).json({ message: "Aucune facture payée trouvée." });
+        }
+
+        // Calculer le total en utilisant `totalAmount`
+        const totalAmount = paidBills.reduce((sum, bill) => sum + (bill.totalAmount || 0), 0);
+
+        res.status(200).json({ 
+            message: "Total des factures payées récupéré avec succès.",
+            totalPaid: totalAmount 
+        });
+
+    } catch (error) {
+        console.error("Erreur lors du calcul du total des factures payées :", error);
+        res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
+    }
+};
+
+exports.getTotalUnPaidBills = async (req, res) => {
+    try {
+        // Récupérer toutes les factures payées
+        const paidBills = await Billing.find({ status: 'Pending' });
+
+        if (paidBills.length === 0) {
+            return res.status(404).json({ message: "Aucune facture impayée trouvée." });
+        }
+
+        // Calculer le total en utilisant `totalAmount`
+        const totalAmount = paidBills.reduce((sum, bill) => sum + (bill.totalAmount || 0), 0);
+
+        res.status(200).json({ 
+            message: "Total des factures payées récupéré avec succès.",
+            totalPaid: totalAmount 
+        });
+
+    } catch (error) {
+        console.error("Erreur lors du calcul du total des factures payées :", error);
+        res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
+    }
+};
+
+

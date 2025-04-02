@@ -23,6 +23,41 @@ exports.countDashboardData = async (req, res) => {
     }
 };
 
+exports.getTopRequestedService = async (req, res) => {
+    try {
+        // Récupérer le service le plus utilisé dans RepairDetail
+        const topServiceUsage = await RepairDetail.aggregate([
+            { $group: { _id: "$idService", count: { $sum: 1 } } },
+            { $sort: { count: -1 } }, // Trier par ordre décroissant
+            { $limit: 1 } // Ne récupérer que le plus utilisé
+        ]);
+
+        if (topServiceUsage.length === 0) {
+            return res.status(404).json({ message: "Aucun service trouvé." });
+        }
+
+        // Récupérer les détails du service en base de données
+        const topService = await Service.findById(topServiceUsage[0]._id);
+
+        if (!topService) {
+            return res.status(404).json({ message: "Service non trouvé en base de données." });
+        }
+
+        res.status(200).json({
+            message: "Service le plus demandé récupéré avec succès.",
+            topService: {
+                name: topService.name,
+                description: topService.description,
+                totalRequests: topServiceUsage[0].count
+            }
+        });
+
+    } catch (error) {
+        console.error("Erreur lors de la récupération du service le plus demandé :", error);
+        res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
+    }
+};
+
 exports.getMostRequestedServices = async (req, res) => {
     try {
         // Comptabiliser combien de fois chaque service est utilisé dans RepairDetail

@@ -98,3 +98,19 @@ exports.deleteCar = async (req, res) => {
         res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
     }
 };
+
+
+// fonction antsika maka isan'ny nombre voiture
+exports.getTotalCars = async (req, res) => {
+    try {
+        const totalCars = await Car.countDocuments();
+        
+        res.status(200).json({
+            message: "Nombre total de voitures enregistrées récupéré avec succès.",
+            totalCars
+        });
+    } catch (error) {
+        console.error("Erreur lors de la récupération du nombre total de voitures :", error);
+        res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
+    }
+};

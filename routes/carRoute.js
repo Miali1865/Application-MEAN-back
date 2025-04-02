@@ -1,6 +1,6 @@
 const express = require('express');
 const { getAllTypesOfCar, createTypeOfCar, getTypeOfCarById,updateTypeOfCar,deleteTypeOfCar } = require('../controllers/TypeOfCarController');
-const { getAllCars,getCarById,createCar,updateCar,deleteCar } = require('../controllers/carController');
+const { getAllCars,getCarById,createCar,updateCar,deleteCar,getTotalCars } = require('../controllers/carController');
 const { getAllBrands,getBrandById,createBrand,updateBrand,deleteBrand,getBrandCount } = require('../controllers/brandController');
 const { getAllRepairs,createRepair,deleteRepair,getLastRepairId } = require('../controllers/repairController');
 const { getAllRepairDetails,createRepairDetail,getRepairsByMechanic,getCompletedRepairsByCar,getLatestRepairByCar } = require('../controllers/repairDetailController');
@@ -16,6 +16,7 @@ router.get('/type/:id', authMiddleware, getTypeOfCarById);
 router.post('/type', authMiddleware, roleMiddleware(["manager"]), createTypeOfCar);
 router.put('/type/:id', authMiddleware, roleMiddleware(["manager"]), updateTypeOfCar); 
 router.delete('/type/:id', authMiddleware, roleMiddleware(["manager"]), deleteTypeOfCar);
+router.get('/total-cars', authMiddleware, roleMiddleware(["manager"]), getTotalCars);
 
 router.get('/brand', authMiddleware, getAllBrands);
 router.get('/brand/:id', authMiddleware, getBrandById); 

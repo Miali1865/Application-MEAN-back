@@ -88,3 +88,19 @@ exports.deleteBrand = async (req, res) => {
         res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
     }
 };
+
+exports.getBrandCount = async (req, res) => {
+    try {
+        // Compter le nombre total de marques
+        const brandCount = await Brand.countDocuments();
+
+        res.status(200).json({ 
+            message: "Nombre total de marques récupéré avec succès.",
+            totalBrands: brandCount
+        });
+
+    } catch (error) {
+        console.error("Erreur lors du comptage des marques :", error);
+        res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
+    }
+};

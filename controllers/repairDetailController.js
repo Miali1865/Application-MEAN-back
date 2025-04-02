@@ -57,7 +57,7 @@ exports.createRepairDetail = async (req, res) => {
     }
 };
 
-// Ceci permet de récupérer les réparations d'un mécanicien mbola tsy mety tsara
+// Ceci permet de récupérer les réparations d'un mécanicien 
 exports.getRepairsByMechanic = async (req, res) => {
     try {
         const { idMecanicien } = req.params;

@@ -1,8 +1,76 @@
 const mongoose = require('mongoose');
 const Appointment = require('../models/Appointment');
 const Repair = require('../models/Repair');
+const RepairDetail = require('../models/RepairDetail');
 
 const timeSlots = ['08:00', '10:00', '14:00', '16:00']; // Créneaux horaires autorisés
+
+exports.createRepairAndDetails = async (req, res) => {
+    try {
+        const { idVoiture, idService, selectedDate, selectedSlot } = req.body;
+
+        // Vérification de l'existence de la voiture dans la base de données
+        let repair = await Repair.findOne({ idVoiture });
+
+        // Si la réparation n'existe pas, on la crée
+        if (!repair) {
+            repair = new Repair({
+                idVoiture
+            });
+            await repair.save();
+        }
+
+        // Vérification du créneau horaire
+        if (!timeSlots.includes(selectedSlot)) {
+            return res.status(400).json({
+                message: `Créneau horaire invalide. Les créneaux disponibles sont ${timeSlots.join(', ')}.`
+            });
+        }
+
+        // Création du RepairDetail
+        const repairDetail = new RepairDetail({
+            idRepair: repair._id, // L'ID de la réparation (créée ou existante)
+            idService, // Service à associer
+        });
+
+        await repairDetail.save();
+
+        // Vérification des créneaux déjà réservés pour la date donnée
+        const date = new Date(selectedDate);
+        date.setHours(0, 0, 0, 0); // Mettre l'heure à minuit pour la comparaison
+
+        const existingAppointment = await Appointment.countDocuments({ date, timeSlot: selectedSlot });
+        if (existingAppointment > 0) {
+            return res.status(400).json({
+                message: "Ce créneau est déjà réservé. Veuillez en choisir un autre."
+            });
+        }
+
+        // Création du rendez-vous (Appointment)
+        const appointment = new Appointment({
+            idRepair: repair._id,
+            date,
+            timeSlot: selectedSlot
+        });
+
+        await appointment.save();
+
+        return res.status(201).json({
+            message: "Réparation, détail de réparation et rendez-vous créés avec succès.",
+            repair,
+            repairDetail,
+            appointment
+        });
+
+    } catch (error) {
+        console.error("Erreur lors de la création de la réparation et des détails :", error);
+        return res.status(500).json({
+            message: "Erreur interne du serveur.",
+            error: error.message
+        });
+    }
+};
+
 
 exports.scheduleAppointment = async (req, res) => {
     try {
@@ -60,20 +128,44 @@ exports.scheduleAppointment = async (req, res) => {
 
 exports.getTotalBookedAppointmentsByDate = async (req, res) => {
     try {
-        // Agréger les rendez-vous par date
+        // Agréger les rendez-vous par date et par créneau horaire
         const appointmentsByDate = await Appointment.aggregate([
             {
+                // Regrouper les rendez-vous par date (en format YYYY-MM-DD)
                 $group: {
-                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-                    title: { $sum: 1 }
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }, 
+                    timeSlots: {
+                        $push: "$timeSlot"
+                    }
                 }
             },
-            { $sort: { _id: -1 } }
+            {
+                // On trie par date, la plus récente d'abord
+                $sort: { _id: -1 }
+            },
+            {
+                // On ajoute un champ count pour le nombre de créneaux réservés par date
+                $project: {
+                    _id: 1,
+                    timeSlots: 1,
+                    totalAppointments: { $size: "$timeSlots" } 
+                }
+            }
         ]);
+
+        // Pour chaque date, on récupère les créneaux horaires uniques
+        const formattedAppointments = appointmentsByDate.map(appointment => {
+            const timeSlotsUnique = [...new Set(appointment.timeSlots)]; 
+            return {
+                date: appointment._id,
+                timeSlots: timeSlotsUnique,
+                totalAppointments: appointment.totalAppointments
+            };
+        });
 
         return res.status(200).json({
             message: "Nombre de rendez-vous par date récupéré avec succès.",
-            appointmentsByDate
+            appointmentsByDate: formattedAppointments
         });
 
     } catch (error) {

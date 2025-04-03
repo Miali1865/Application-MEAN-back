@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Appointment = require('../models/Appointment');
 const Repair = require('../models/Repair');
 const RepairDetail = require('../models/RepairDetail');
+const Car = require('../models/Car');
 
 const timeSlots = ['08:00', '10:00', '14:00', '16:00']; // Créneaux horaires autorisés
 
@@ -10,15 +11,21 @@ exports.createRepairAndDetails = async (req, res) => {
         const { idVoiture, idService, selectedDate, selectedSlot } = req.body;
 
         // Vérification de l'existence de la voiture dans la base de données
-        let repair = await Repair.findOne({ idVoiture });
-
-        // Si la réparation n'existe pas, on la crée
-        if (!repair) {
-            repair = new Repair({
-                idVoiture
+        const car = await Car.findById(idVoiture);
+        if (!car) {
+            return res.status(404).json({
+                message: "Voiture introuvable."
             });
-            await repair.save();
         }
+
+        // Création d'une nouvelle réparation pour chaque voiture
+        const repair = new Repair({
+            idVoiture,
+            dateOfRepair: new Date(selectedDate),
+        });
+
+        // Sauvegarde de la réparation
+        await repair.save();
 
         // Vérification du créneau horaire
         if (!timeSlots.includes(selectedSlot)) {
@@ -27,15 +34,15 @@ exports.createRepairAndDetails = async (req, res) => {
             });
         }
 
-        // Création du RepairDetail
+        // Création du détail de la réparation (RepairDetail)
         const repairDetail = new RepairDetail({
-            idRepair: repair._id, // L'ID de la réparation (créée ou existante)
+            idRepair: repair._id, // L'ID de la réparation que nous venons de créer
             idService, // Service à associer
         });
 
-        await repairDetail.save();
+        await repairDetail.save(); // Sauvegarde du détail de la réparation
 
-        // Vérification des créneaux déjà réservés pour la date donnée
+        // Vérification des créneaux déjà réservés pour la date et l'heure
         const date = new Date(selectedDate);
         date.setHours(0, 0, 0, 0); // Mettre l'heure à minuit pour la comparaison
 
@@ -48,12 +55,12 @@ exports.createRepairAndDetails = async (req, res) => {
 
         // Création du rendez-vous (Appointment)
         const appointment = new Appointment({
-            idRepair: repair._id,
+            idRepair: repair._id, // ID de la réparation associée à ce rendez-vous
             date,
             timeSlot: selectedSlot
         });
 
-        await appointment.save();
+        await appointment.save(); // Sauvegarde du rendez-vous
 
         return res.status(201).json({
             message: "Réparation, détail de réparation et rendez-vous créés avec succès.",
@@ -70,7 +77,6 @@ exports.createRepairAndDetails = async (req, res) => {
         });
     }
 };
-
 
 exports.scheduleAppointment = async (req, res) => {
     try {

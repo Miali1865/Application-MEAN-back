@@ -148,7 +148,7 @@ exports.getTotalBookedAppointmentsByDate = async (req, res) => {
                 $project: {
                     _id: 1,
                     timeSlots: 1,
-                    totalAppointments: { $size: "$timeSlots" } 
+                    title: { $size: "$timeSlots" } 
                 }
             }
         ]);
@@ -159,7 +159,7 @@ exports.getTotalBookedAppointmentsByDate = async (req, res) => {
             return {
                 date: appointment._id,
                 timeSlots: timeSlotsUnique,
-                totalAppointments: appointment.totalAppointments
+                title: appointment.title
             };
         });
 

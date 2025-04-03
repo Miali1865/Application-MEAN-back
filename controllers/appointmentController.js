@@ -3,82 +3,47 @@ const Appointment = require('../models/Appointment');
 const Repair = require('../models/Repair');
 const RepairDetail = require('../models/RepairDetail');
 const Car = require('../models/Car');
+const Billing = require('../models/Billing');
 
 const timeSlots = ['08:00', '10:00', '14:00', '16:00']; // Créneaux horaires autorisés
 
 exports.createRepairAndDetails = async (req, res) => {
     try {
         const { idVoiture, idService, selectedDate, selectedSlot } = req.body;
+        if (!mongoose.Types.ObjectId.isValid(idVoiture)) return res.status(400).json({ message: "ID de voiture invalide." });
+        if (!timeSlots.includes(selectedSlot)) return res.status(400).json({ message: `Créneau horaire invalide.` });
 
-        // Vérification de l'existence de la voiture dans la base de données
         const car = await Car.findById(idVoiture);
-        if (!car) {
-            return res.status(404).json({
-                message: "Voiture introuvable."
-            });
-        }
+        if (!car) return res.status(404).json({ message: "Voiture introuvable." });
 
-        const adjustedDate = new Date(selectedDate);
-        adjustedDate.setDate(adjustedDate.getDate() + 1); 
+        const date = new Date(selectedDate);
+        date.setDate(date.getDate() + 1);
+        date.setHours(0, 0, 0, 0);
 
-        // Création d'une nouvelle réparation pour chaque voiture
-        const repair = new Repair({
-            idVoiture,
-            dateOfRepair: new Date(adjustedDate),
-        });
+        const existingAppointment = await Appointment.exists({ date, timeSlot: selectedSlot });
+        if (existingAppointment) return res.status(400).json({ message: "Ce créneau est déjà réservé." });
 
-        // Sauvegarde de la réparation
-        await repair.save();
+        const repair = await new Repair({ idVoiture, dateOfRepair: date }).save();
+        const repairDetail = await new RepairDetail({ idRepair: repair._id, idService }).save();
+        await new Appointment({ idRepair: repair._id, date, timeSlot: selectedSlot }).save();
 
-        // Vérification du créneau horaire
-        if (!timeSlots.includes(selectedSlot)) {
-            return res.status(400).json({
-                message: `Créneau horaire invalide. Les créneaux disponibles sont ${timeSlots.join(', ')}.`
-            });
-        }
+        // Vérifier si la facturation est possible
+        await createBillingIfCompleted(repair._id);
 
-        // Création du détail de la réparation (RepairDetail)
-        const repairDetail = new RepairDetail({
-            idRepair: repair._id, // L'ID de la réparation que nous venons de créer
-            idService, // Service à associer
-        });
-
-        await repairDetail.save(); // Sauvegarde du détail de la réparation
-
-        // Vérification des créneaux déjà réservés pour la date et l'heure
-        const date = new Date(adjustedDate);
-        date.setHours(0, 0, 0, 0); // Mettre l'heure à minuit pour la comparaison
-
-        const existingAppointment = await Appointment.countDocuments({ date, timeSlot: selectedSlot });
-        if (existingAppointment > 0) {
-            return res.status(400).json({
-                message: "Ce créneau est déjà réservé. Veuillez en choisir un autre."
-            });
-        }
-
-        // Création du rendez-vous (Appointment)
-        const appointment = new Appointment({
-            idRepair: repair._id, // ID de la réparation associée à ce rendez-vous
-            date,
-            timeSlot: selectedSlot
-        });
-
-        await appointment.save(); // Sauvegarde du rendez-vous
-
-        return res.status(201).json({
-            message: "Réparation, détail de réparation et rendez-vous créés avec succès.",
-            repair,
-            repairDetail,
-            appointment
-        });
-
+        res.status(201).json({ message: "Réparation créée avec succès.", repair, repairDetail });
     } catch (error) {
-        console.error("Erreur lors de la création de la réparation et des détails :", error);
-        return res.status(500).json({
-            message: "Erreur interne du serveur.",
-            error: error.message
-        });
+        console.error("Erreur lors de la création :", error);
+        res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
     }
+};
+
+const createBillingIfCompleted = async (idRepair) => {
+    const repairDetails = await RepairDetail.find({ idRepair });
+    if (!repairDetails.length) return;
+    // Calcule le montant total en ignorant le statut des réparations
+    const totalAmount = repairDetails.reduce((sum, detail) => sum + (detail.price || 0), 0);
+    // Insère une nouvelle facture
+    await new Billing({ idRepair, totalAmount, status: 'Pending' }).save();
 };
 
 exports.scheduleAppointment = async (req, res) => {

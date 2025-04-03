@@ -20,7 +20,7 @@ exports.getCarById = async (req, res) => {
     try {
         const car = await Car.find({ client: req.params.clientId })
             .populate('brand', 'name')
-            .populate('typeOfCar', 'name');
+            .populate('typeOfCar', 'name priceCoefficient timeCoefficient');
         if (!car) {
             return res.status(404).json({ message: "Aucune voiture trouvée pour ce client." });
         }

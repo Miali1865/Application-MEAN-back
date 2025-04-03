@@ -18,10 +18,13 @@ exports.createRepairAndDetails = async (req, res) => {
             });
         }
 
+        const adjustedDate = new Date(selectedDate);
+        adjustedDate.setDate(adjustedDate.getDate() + 1); 
+
         // Création d'une nouvelle réparation pour chaque voiture
         const repair = new Repair({
             idVoiture,
-            dateOfRepair: new Date(selectedDate),
+            dateOfRepair: new Date(adjustedDate),
         });
 
         // Sauvegarde de la réparation
@@ -43,7 +46,7 @@ exports.createRepairAndDetails = async (req, res) => {
         await repairDetail.save(); // Sauvegarde du détail de la réparation
 
         // Vérification des créneaux déjà réservés pour la date et l'heure
-        const date = new Date(selectedDate);
+        const date = new Date(adjustedDate);
         date.setHours(0, 0, 0, 0); // Mettre l'heure à minuit pour la comparaison
 
         const existingAppointment = await Appointment.countDocuments({ date, timeSlot: selectedSlot });

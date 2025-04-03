@@ -196,41 +196,40 @@ exports.getDetailBooked = async (req, res) => {
             { $sort: { _id: -1 } }
         ]);
 
-        const formattedAppointments = await Promise.all(
-            appointmentsByDate.map(async (appointment) => {
-                // Récupérer tous les ID de réparations pour cette date
-                const idRepairs = appointment.timeSlots.map(ts => ts.idRepair);
+        // Récupérer les réparations associées
+        const formattedAppointments = await Promise.all(appointmentsByDate.map(async (appointment) => {
+            const timeSlots = appointment.timeSlots;
 
-                // Récupérer les derniers détails de réparation pour ces réparations
-                let repairDetails = await RepairDetail.find({ idRepair: { $in: idRepairs } })
-                    .populate('idMecanicien', 'name')
-                    .populate('idRepair', 'idVoiture')
-                    .populate('idService', 'name')
-                    .sort({ updatedAt: -1 }) // Prendre le plus récent en premier
-                    .exec();
+            // Récupérer les détails des réparations pour ces réparations
+            const repairDetails = await RepairDetail.find({ idRepair: { $in: timeSlots.map(t => t.idRepair) } })
+                .populate('idMecanicien', 'name')
+                .populate('idService', 'name')
+                .sort({ updatedAt: -1 })
+                .exec();
 
+            // Organiser par `idRepair`
+            const latestRepairs = {};
+            repairDetails.forEach(repair => {
+                latestRepairs[repair.idRepair.toString()] = repair;
+            });
 
-                // Filtrer pour ne garder que le dernier `RepairDetail` par `idRepair`
-                const latestRepairs = {};
-                repairDetails.forEach((repair) => {
-                    latestRepairs[repair.idRepair._id.toString()] = repair;
-                });
+            // Associer chaque créneau au bon mécanicien/service/status
+            const timeSlotDetails = timeSlots.map(({ slot, idRepair }) => {
+                const repairDetail = latestRepairs[idRepair.toString()];
 
-                // Organiser les détails pour chaque créneau horaire
-                const timeSlotDetails = appointment.timeSlots.map(({ slot, idRepair }) => {
-                    const repairDetail = latestRepairs[idRepair.toString()];
+                return {
+                    timeSlot: slot,
+                    mechanic: repairDetail?.idMecanicien?.name || "Aucun",
+                    status: repairDetail?.status || "Not started",
+                    service: repairDetail?.idService?.name || "Non spécifié"
+                };
+            });
 
-                    return {
-                        timeSlot: slot,
-                        mechanic: repairDetail ? repairDetail.idMecanicien?.name : "Aucun",
-                        status: repairDetail ? repairDetail.status : "Not started",
-                        service: repairDetail?.idService?.name || "Non spécifié"
-                    };
-                });
-
-                return { date: appointment._id, timeSlots: timeSlotDetails };
-            })
-        );
+            return {
+                date: appointment._id,
+                timeSlots: timeSlotDetails
+            };
+        }));
 
         return res.status(200).json({
             message: "Détails des rendez-vous récupérés avec succès.",
@@ -242,7 +241,6 @@ exports.getDetailBooked = async (req, res) => {
         res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
     }
 };
-
 
 exports.getPastAppointmentsCount = async (req, res) => {
     try {

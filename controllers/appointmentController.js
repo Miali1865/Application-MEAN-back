@@ -183,6 +183,67 @@ exports.getTotalBookedAppointmentsByDate = async (req, res) => {
     }
 };
 
+exports.getDetailBooked = async (req, res) => {
+    try {
+        // Agréger les rendez-vous par date et créneau horaire
+        const appointmentsByDate = await Appointment.aggregate([
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+                    timeSlots: { $push: { slot: "$timeSlot", idRepair: "$idRepair" } }
+                }
+            },
+            { $sort: { _id: -1 } }
+        ]);
+
+        const formattedAppointments = await Promise.all(
+            appointmentsByDate.map(async (appointment) => {
+                // Récupérer tous les ID de réparations pour cette date
+                const idRepairs = appointment.timeSlots.map(ts => ts.idRepair);
+
+                // Récupérer les derniers détails de réparation pour ces réparations
+                let repairDetails = await RepairDetail.find({ idRepair: { $in: idRepairs } })
+                    .populate('idMecanicien', 'name')
+                    .populate('idRepair', 'idVoiture')
+                    .populate('idService', 'name')
+                    .sort({ updatedAt: -1 }) // Prendre le plus récent en premier
+                    .exec();
+
+
+                // Filtrer pour ne garder que le dernier `RepairDetail` par `idRepair`
+                const latestRepairs = {};
+                repairDetails.forEach((repair) => {
+                    latestRepairs[repair.idRepair._id.toString()] = repair;
+                });
+
+                // Organiser les détails pour chaque créneau horaire
+                const timeSlotDetails = appointment.timeSlots.map(({ slot, idRepair }) => {
+                    const repairDetail = latestRepairs[idRepair.toString()];
+
+                    return {
+                        timeSlot: slot,
+                        mechanic: repairDetail ? repairDetail.idMecanicien?.name : "Aucun",
+                        status: repairDetail ? repairDetail.status : "Not started",
+                        service: repairDetail?.idService?.name || "Non spécifié"
+                    };
+                });
+
+                return { date: appointment._id, timeSlots: timeSlotDetails };
+            })
+        );
+
+        return res.status(200).json({
+            message: "Détails des rendez-vous récupérés avec succès.",
+            appointmentsByDate: formattedAppointments
+        });
+
+    } catch (error) {
+        console.error("Erreur lors de la récupération des rendez-vous :", error);
+        res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
+    }
+};
+
+
 exports.getPastAppointmentsCount = async (req, res) => {
     try {
         const { date } = req.query; // La date doit être passée en tant que query param

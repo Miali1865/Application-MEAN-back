@@ -147,7 +147,7 @@ exports.getTotalBookedAppointmentsByDate = async (req, res) => {
         res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
     }
 };
-
+// OG
 // exports.getDetailBooked = async (req, res) => {
 
 //     try {
@@ -236,7 +236,12 @@ exports.getDetailBooked = async (req, res) => {
                 populate: {
                     path: 'client',
                     select: 'name'
+                },
+                populate: {
+                    path: 'brand',
+                    select: 'name'
                 }
+
             })
             .exec();
 
@@ -276,6 +281,7 @@ exports.getDetailBooked = async (req, res) => {
                     service: repairDetail?.idService?.name || "Non spécifié",
                     clientName: repairInfo?.clientName || "Inconnu",
                     carModel: repairInfo?.carDetails?.model || "Modèle inconnu",
+                    carBrand: repairInfo?.carDetails?.brand?.name || "Modèle inconnu",
                     plateNumber: repairInfo?.carDetails?.plateNumber || "N/A"
                 };
             });
@@ -299,80 +305,6 @@ exports.getDetailBooked = async (req, res) => {
         });
     }
 };
-
-// chat :
-
-// exports.getDetailBooked = async (req, res) => {
-//     try {
-//         // Agréger les rendez-vous par date et créneau horaire
-//         const appointmentsByDate = await Appointment.aggregate([
-//             {
-//                 $group: {
-//                     _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
-//                     timeSlots: { $push: { slot: "$timeSlot", idRepair: "$idRepair" } }
-//                 }
-//             },
-//             { $sort: { _id: -1 } }
-//         ]);
-
-//         // Récupérer les réparations associées
-//         const formattedAppointments = await Promise.all(appointmentsByDate.map(async (appointment) => {
-//             const timeSlots = appointment.timeSlots;
-
-//             // Récupérer les détails des réparations avec les infos sur la voiture et le client
-//             const repairDetails = await RepairDetail.find({ idRepair: { $in: timeSlots.map(t => t.idRepair) } })
-//                 .populate({
-//                     path: 'idRepair',
-//                     populate: {
-//                         path: 'idVoiture',
-//                         populate: {
-//                             path: 'client', // Récupérer les infos du client
-//                             select: 'email' // Récupérer seulement le nom du client
-//                         }
-//                     }
-//                 })
-//                 .populate('idMecanicien', 'name')
-//                 .populate('idService', 'name')
-//                 .sort({ updatedAt: -1 })
-//                 .exec();
-
-//             // Organiser par `idRepair`
-//             const latestRepairs = {};
-//             repairDetails.forEach(repair => {
-//                 latestRepairs[repair.idRepair.toString()] = repair;
-//             });
-
-//             // Associer chaque créneau au bon mécanicien/service/status/client
-//             const timeSlotDetails = timeSlots.map(({ slot, idRepair }) => {
-//                 const repairDetail = latestRepairs[idRepair.toString()];
-//                 const clientName = repairDetail?.idRepair?.idVoiture?.client?.email || "Inconnu";
-
-//                 return {
-//                     timeSlot: slot,
-//                     mechanic: repairDetail?.idMecanicien?.name || "Aucun",
-//                     status: repairDetail?.status || "Not started",
-//                     service: repairDetail?.idService?.name || "Non spécifié",
-//                     client: clientName
-//                 };
-//             });
-
-//             return {
-//                 date: appointment._id,
-//                 timeSlots: timeSlotDetails
-//             };
-//         }));
-
-//         return res.status(200).json({
-//             message: "Détails des rendez-vous récupérés avec succès.",
-//             appointmentsByDate: formattedAppointments
-//         });
-
-//     } catch (error) {
-//         console.error("Erreur lors de la récupération des rendez-vous :", error);
-//         res.status(500).json({ message: "Erreur interne du serveur", error: error.message });
-//     }
-// };
-
 
 exports.getPastAppointmentsCount = async (req, res) => {
     try {

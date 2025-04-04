@@ -233,14 +233,15 @@ exports.getDetailBooked = async (req, res) => {
             })
             .populate({
                 path: 'idVoiture',
-                populate: {
+                populate: [{
                     path: 'client',
                     select: 'name'
-                },
-                populate: {
+                },{
                     path: 'brand',
                     select: 'name'
                 }
+            ],
+                
 
             })
             .exec();
@@ -281,7 +282,7 @@ exports.getDetailBooked = async (req, res) => {
                     service: repairDetail?.idService?.name || "Non spécifié",
                     clientName: repairInfo?.clientName || "Inconnu",
                     carModel: repairInfo?.carDetails?.model || "Modèle inconnu",
-                    carBrand: repairInfo?.carDetails?.brand?.name || "Modèle inconnu",
+                    carBrand: repairInfo?.carDetails?.brand?.name || "Marque inconnu",
                     plateNumber: repairInfo?.carDetails?.plateNumber || "N/A"
                 };
             });
